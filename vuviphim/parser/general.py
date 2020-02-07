@@ -1,27 +1,45 @@
-from khoaitv.config import Config
+from vuviphim.config import Config
 from utils.helper import normalize_url
 from custom_request.request import AsyncSession, AsyncRequest
 from bs4 import BeautifulSoup
 import typing
 import time
-
+import re
 class GeneralParser:
 
     @classmethod
     async def get_categories_page(cls, debug=False):
-        links = []
-        try:
-            async with AsyncSession() as session:
-                res = await session.get(Config.BASE_URL)
-                res.raise_for_status()
-                html_parser = BeautifulSoup(await res.text(), "html.parser")
-                categories = html_parser.find("div", {"id": "bs-example-navbar-collapse-1"}).find("ul").find("li").find("ul")
-                for category in categories.findAll("li"):
-                    links.append(category.find("a")["href"])
-        except Exception as e:
-            if debug:
-                print(f"get_categories_page() {repr(e)}")
-        return links
+        # links = []
+        # try:
+        #     async with AsyncSession() as session:
+        #         res = await session.get(Config.BASE_URL)
+        #         res.raise_for_status()
+        #         html_parser = BeautifulSoup(await res.text(), "html.parser")
+        #         categories = html_parser.find("li", {"id": "menu-item-134"}).find("ul")
+        #         for category in categories.findAll("li"):
+        #             links.append(category.find("a")["href"])
+        # except Exception as e:
+        #     if debug:
+        #         print(f"get_categories_page() {repr(e)}")
+        # return links
+        return [
+            f"{Config.BASE_URL}/anime/",
+            f"{Config.BASE_URL}/phim-hanh-dong",
+            f"{Config.BASE_URL}/phim-vo-thuat",
+            f"{Config.BASE_URL}/kinh-di",
+            f"{Config.BASE_URL}/hai-huoc",
+            f"{Config.BASE_URL}/phim-co-trang",
+            f"{Config.BASE_URL}/hoat-hinh",
+            f"{Config.BASE_URL}/vien-tuong",
+            f"{Config.BASE_URL}/giat-gan/",
+            f"{Config.BASE_URL}/tam-ly",
+            f"{Config.BASE_URL}/tv-show/",
+            f"{Config.BASE_URL}/phieu-luu",
+            f"{Config.BASE_URL}/than-thoai",
+            f"{Config.BASE_URL}/chien-tranh",
+            f"{Config.BASE_URL}/toi-pham/",
+            f"{Config.BASE_URL}/lich-su",
+            ]
 
     @classmethod
     async def get_movie_urls(cls, category_url, debug=False):
@@ -29,9 +47,9 @@ class GeneralParser:
             n_pages = 1
             try:
                 html_parser = BeautifulSoup(content, "html.parser")
-                page_last = html_parser.find("li", class_="pag-last").find("a")["href"]
-                # https://vuviphimmoi.com/anime/page/1
-                n_pages = int(page_last.split("/")[-1])
+                page_of_text = html_parser.find("div", class_="pagination").find("span")
+                #Page 1 of 30 --> regex for 30
+                n_pages = int(re.search(r"Page \d* of (\d*)", str(page_of_text)).group(1))
             except Exception as e:
                 if debug:
                     print(f"get_num_pages()\n{repr(e)}")
@@ -45,14 +63,14 @@ class GeneralParser:
             links = []
             try:
                 html_parser = BeautifulSoup(content, "html.parser")
-                for film_box in html_parser.findAll("a", class_="film-small"):
-                    links.append(film_box["href"])
+                for film_box in html_parser.find("div", class_="items").findAll("article"):
+                    links.append(film_box.find("div", class_="poster").find("a")["href"])
                 if debug:
                     print(links)
                 return links;
             except Exception as e:
                 if debug:
-                    print("parse_urls_from_page()", repr(e))
+                    print(f"parse_urls_from_page() \n{repr(e)}")
             return links
 
         links = []
@@ -79,9 +97,9 @@ class GeneralParser:
     @classmethod
     async def get_categorized_movie_urls(cls, category_urls, debug=False):
         categorized_movies = {}
-        parse_routines = await asyncio.gather(*( \
-                cls.get_movie_urls(url) \
-                    for url in category_urls), return_exceptions=True)
+        # parse_routines = await asyncio.gather(*( \
+        #         cls.get_movie_urls(url) \
+        #             for url in category_urls), return_exceptions=True)
         total = 0
         for category in category_urls:
             categorized_movies[category] = await cls.get_movie_urls(category, debug=debug)
