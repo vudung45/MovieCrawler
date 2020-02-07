@@ -1,6 +1,6 @@
 # MovieCrawler
  - High performance movie crawler.
- - Concurrently crawl the entire movie directory from pirated sites
+ - Concurrently crawl the entire movie directories from pirated sites
  
 
 # Tests
