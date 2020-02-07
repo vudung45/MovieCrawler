@@ -1,18 +1,17 @@
-from vuviphim.config import Config
+from bilutv.config import Config
 from utils.helper import normalize_url
 from custom_request.request import AsyncSession, AsyncRequest
 from bs4 import BeautifulSoup
 import typing
 import time
-import re
 
 def _get_num_pages(content, debug=False):
             n_pages = 1
             try:
                 html_parser = BeautifulSoup(content, "html.parser")
-                page_of_text = html_parser.find("div", class_="pagination").find("span")
-                #Page 1 of 30 --> regex for 30
-                n_pages = int(re.search(r"Page \d* of (\d*)", str(page_of_text)).group(1))
+                page_last = html_parser.find("div", class_="pagination").find("ul").findAll("li")[-1].get_text()
+                # https://vuviphimmoi.com/anime/page/1
+                n_pages = int(page_last)
             except Exception as e:
                 if debug:
                     print(f"_get_num_pages()\n{repr(e)}")
@@ -26,49 +25,48 @@ def _parse_urls_from_page(content, debug=False):
     links = []
     try:
         html_parser = BeautifulSoup(content, "html.parser")
-        for film_box in html_parser.find("div", class_="items").findAll("article"):
-            links.append(film_box.find("div", class_="poster").find("a")["href"])
+        for film_box in html_parser.findAll("li", class_="film-item"):
+            links.append(film_box.find("a")["href"])
+
         return links;
     except Exception as e:
         if debug:
-            print(f"_parse_urls_from_page() \n{repr(e)}")
+            print("_parse_urls_from_page()", repr(e))
     return links
+
 
 class GeneralParser:
 
     @classmethod
-    async def get_categories_page(cls, debug=False):
-        # links = []
-        # try:
-        #     async with AsyncSession() as session:
-        #         res = await session.get(Config.BASE_URL)
-        #         res.raise_for_status()
-        #         html_parser = BeautifulSoup(await res.text(), "html.parser")
-        #         categories = html_parser.find("li", {"id": "menu-item-134"}).find("ul")
-        #         for category in categories.findAll("li"):
-        #             links.append(category.find("a")["href"])
-        # except Exception as e:
-        #     if debug:
-        #         print(f"get_categories_page() {repr(e)}")
-        # return links
+    async def get_categories_page(cls, debug = False):
         return [
-                f"{Config.BASE_URL}/anime/",
-                f"{Config.BASE_URL}/phim-hanh-dong",
-                f"{Config.BASE_URL}/phim-vo-thuat",
-                f"{Config.BASE_URL}/kinh-di",
-                f"{Config.BASE_URL}/hai-huoc",
-                f"{Config.BASE_URL}/phim-co-trang",
-                f"{Config.BASE_URL}/hoat-hinh",
-                f"{Config.BASE_URL}/vien-tuong",
-                f"{Config.BASE_URL}/giat-gan/",
-                f"{Config.BASE_URL}/tam-ly",
-                f"{Config.BASE_URL}/tv-show/",
-                f"{Config.BASE_URL}/phieu-luu",
-                f"{Config.BASE_URL}/than-thoai",
-                f"{Config.BASE_URL}/chien-tranh",
-                f"{Config.BASE_URL}/toi-pham/",
-                f"{Config.BASE_URL}/lich-su",
-            ]
+            "https://bilutv.org/the-loai/phim-18.html",
+            "https://bilutv.org/the-loai/hanh-dong.html",
+            "https://bilutv.org/the-loai/vo-thuat-kiem-hiep.html",
+            "https://bilutv.org/the-loai/tam-ly-tinh-cam.html",
+            "https://bilutv.org/the-loai/hai-huoc.html",
+            "https://bilutv.org/the-loai/hoat-hinh.html",
+            "https://bilutv.org/the-loai/vien-tuong.html",
+            "https://bilutv.org/the-loai/hinh-su.html",
+            "https://bilutv.org/the-loai/kinh-di.html",
+            "https://bilutv.org/the-loai/chien-tranh.html",
+            "https://bilutv.org/the-loai/phieu-luu.html",
+            "https://bilutv.org/the-loai/bi-an.html",
+            "https://bilutv.org/the-loai/khoa-hoc.html",
+            "https://bilutv.org/the-loai/gia-dinh.html",
+            "https://bilutv.org/the-loai/cao-boi.html",
+            "https://bilutv.org/the-loai/am-nhac.html",
+            "https://bilutv.org/the-loai/the-thao.html",
+            "https://bilutv.org/the-loai/truyen-hinh.html",
+            "https://bilutv.org/the-loai/tv-show.html",
+            "https://bilutv.org/the-loai/lich-su.html",
+            "https://bilutv.org/the-loai/tai-lieu.html",
+            "https://bilutv.org/the-loai/xuyen-khong.html",
+            "https://bilutv.org/the-loai/co-trang.html",
+            "https://bilutv.org/the-loai/hoc-duong.html",
+            "https://bilutv.org/the-loai/y-khoa-bac-si.html",
+            "https://bilutv.org/the-loai/trailer.html"
+        ]
 
     @classmethod
     async def get_movie_urls(cls, category_url, session=None, debug=False):
@@ -148,6 +146,7 @@ if __name__ == "__main__":
     eloop = asyncio.new_event_loop()
     start = time.time()
     categories = eloop.run_until_complete(GeneralParser.get_categories_page(debug=True))
+    print(categories)
     categorized_movies_urls, total_links = eloop.run_until_complete(GeneralParser.get_categorized_movie_urls(categories, debug=True))
     print(f"Parsing completed in {time.time() - start} seconds. "
           f"Total of {total_links} links.")
