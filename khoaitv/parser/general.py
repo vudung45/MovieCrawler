@@ -2,22 +2,22 @@ from khoaitv.config import Config
 from utils.helper import normalize_url
 from custom_request.request import AsyncSession, AsyncRequest
 from bs4 import BeautifulSoup
-import typing
+from typing import List, Iterable, Tuple, Dict
 import time
 
-def _get_num_pages(content, debug=False):
+def _get_num_pages(content: str, debug=False) -> int:
             n_pages = 1
             try:
                 html_parser = BeautifulSoup(content, "html.parser")
                 page_last = html_parser.find("li", class_="pag-last").find("a")["href"]
-                # https://vuviphimmoi.com/anime/page/1
+                # anime/page/1
                 n_pages = int(page_last.split("/")[-1])
             except Exception as e:
                 if debug:
                     print(f"_get_num_pages()\n{repr(e)}")
             return n_pages
 
-def _parse_urls_from_page(content, debug=False):
+def _parse_urls_from_page(content: str, debug=False) -> List[str]:
     """
     get movie urls from a page
     """
@@ -37,7 +37,7 @@ def _parse_urls_from_page(content, debug=False):
 class GeneralParser:
 
     @classmethod
-    async def get_categories_page(cls, debug=False):
+    async def get_categories_page(cls, debug=False) -> List[str]:
         links = []
         try:
             async with AsyncSession() as session:
@@ -53,7 +53,7 @@ class GeneralParser:
         return links
 
     @classmethod
-    async def get_movie_urls(cls, category_url, session=None, debug=False):
+    async def get_movie_urls(cls, category_url: str, session=None, debug=False) -> List[str]:
         create_session = session is None
         # if a session is not provided then we create one
         if not session:
@@ -94,7 +94,7 @@ class GeneralParser:
         return movie_urls
 
     @classmethod
-    async def get_categorized_movie_urls(cls, category_urls, concurrent=True, debug=False):
+    async def get_categorized_movie_urls(cls, category_urls: Iterable[str], concurrent=True, debug=False) -> Tuple[Dict[str, List[str]], int]:
         categorized_movies = {}
         total = 0
         #concurrently scrape movie urls for all categories
