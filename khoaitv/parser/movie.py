@@ -58,7 +58,7 @@ class MovieParser:
             for li in html_parse.find("ul", class_="infomation-film").findAll("li"):
                 # Diễn viên: Emma Stone, Zac Efron
                 info = li.text.split(":")
-                field = info[0] # Diễn viên
+                field = info[0].strip() # Diễn viên
                 if field in SWITCHER:
                     metadata[SWITCHER[field]] = info[1].strip() # clean leading white spaces
             metadata["movie_id"] = re.match(r".*-(\d*)$", url)[1]

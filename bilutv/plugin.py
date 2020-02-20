@@ -67,21 +67,23 @@ class BiluTV:
 
     @classmethod
     async def mergeMovies(cls, debug=False):
-        for instance in MovieInstanceCollection.find({"origin" : Config.IDENTIFIER}):
-            matching_movie = MovieInstanceCollection.findCorrespondingMovie(instance["_id"])
+        async for instance in AsyncMovieInstanceCollection.find({"origin" : Config.IDENTIFIER}):
+            # merge all instances of the same movie on different sites into one main instance
+            # create the main movie instance if not exists
+            matching_movie = await AsyncMovieInstanceCollection.findCorrespondingMovie(instance=instance)
             movie_object_id = None
             if not matching_movie:
-                movie_object_id = MovieCollection.create_new_movie({"title": instance["title"]})
+                movie_object_id = await AsyncMovieCollection.create_new_movie({"title": instance["title"]})
             else:
                 movie_object_id = matching_movie["_id"]
+            
+            print(await AsyncMovieCollection.add_movie_instance(movie_object_id, instance["_id"]))
 
-            if debug:
-                print(MovieCollection.add_movie_instance(movie_object_id, instance["_id"]))
 
 if __name__ == "__main__":
     eloop = asyncio.get_event_loop()
-    metadata = eloop.run_until_complete(BiluTV.populate(debug=True))
-    #eloop.run_until_complete(KhoaiTV.mergeMovies(debug=True))
+    #metadata = eloop.run_until_complete(BiluTV.populate(debug=True))
+    eloop.run_until_complete(BiluTV.mergeMovies(debug=True))
 
 
 

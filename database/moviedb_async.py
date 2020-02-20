@@ -90,7 +90,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
 
         matching_movie = await AsyncMovieCollection.find_one({
                 "title": {
-                  "$regex" : "(?i)" + ".*".join(words)
+                  "$regex" : "(?i)" + "\W+".join(words)
                 }
             })
 
