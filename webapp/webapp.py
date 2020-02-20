@@ -96,5 +96,5 @@ async def get_episodes(instance_id, forceUpdate=False):
 if __name__ == "__main__":
     app = web.Application()
     app.add_routes(routes)
-    web.run_app(app)
+    web.run_app(app, os.getenv('PORT'))
     
