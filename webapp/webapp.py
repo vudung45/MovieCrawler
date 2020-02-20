@@ -37,7 +37,7 @@ async def search(request):
         except Exception as e:
             return web.json_response({"status": 0,  "error": "Something went wrong!"})
 
-   return web.json_response({"status": 0, "error": "Missing paramaters"})
+    return web.json_response({"status": 0, "error": "Missing paramaters"})
 
 
 @routes.get('/episodes')
