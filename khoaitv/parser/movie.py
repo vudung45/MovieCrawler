@@ -5,6 +5,7 @@ from utils.helper import inject_async_session
 from khoaitv.config import Config
 from bs4 import BeautifulSoup
 import asyncio
+import re
 
 SWITCHER = {
     "Ngày phát hành ": "year",
@@ -41,30 +42,32 @@ class MovieParser:
 
     @classmethod
     @inject_async_session
-    async def get_movie_info(self, url: str, content=None, session = None, debug=False) -> Dict[str, str]:
+    async def get_movie_info(self, url: str, content=None, session = None, debug=False) -> Optional[Dict[str, str]]:
         global SWITCHER
 
-        if not content:
-            content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
-
         try:
+            if not content:
+                content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
             html_parse = BeautifulSoup(content, "html.parser")
             metadata = {
-                "title": html_parse.find("h2", class_="title-film-detail-2").text,
-                "title_vietnamese": html_parse.find("h1", class_="title-film-detail-1").text
+                "title": html_parse.find("h2", class_="title-film-detail-2").text.strip(),
+                "title_vietnamese": html_parse.find("h1", class_="title-film-detail-1").text.strip()
             }
             metadata["watch_url"] = html_parse.find("a", class_="play-film")["href"]
+            metadata["vietnamese_description"] = html_parse.find("p", class_="content-film").text.strip()
             for li in html_parse.find("ul", class_="infomation-film").findAll("li"):
                 # Diễn viên: Emma Stone, Zac Efron
                 info = li.text.split(":")
                 field = info[0] # Diễn viên
                 if field in SWITCHER:
                     metadata[SWITCHER[field]] = info[1].strip() # clean leading white spaces
+            metadata["movie_id"] = re.match(r".*-(\d*)$", url)[1]
+            metadata["origin"] = Config.IDENTIFIER
             return metadata
         except Exception as e:
             if debug:
                 print(f"get_movie_info(). Error: \n {repr(e)}")
-        return {}
+        return None
 
 
     @classmethod

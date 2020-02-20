@@ -1,0 +1,4 @@
+dnspython
+pymongo
+bs4
+aiohttp

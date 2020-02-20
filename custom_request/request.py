@@ -2,6 +2,8 @@ import aiohttp
 from urllib.parse import urlparse
 import time
 import asyncio
+from  aiohttp.client_exceptions import ClientResponseError
+from utils.retryable import retryable_async
 
 class AsyncSession(aiohttp.ClientSession):
 
@@ -19,16 +21,19 @@ class AsyncSession(aiohttp.ClientSession):
             
         self.access[domain] = time.time()
 
+    @retryable_async(exceptions=[ClientResponseError])
     async def get(self, url, *args, delay=0.01, **kwargs):
         domain = urlparse(url).netloc
         await self.delay_access(domain, delay)
-        return await super().get(url, *args, **kwargs)
+        r =  await super().get(url, *args, **kwargs)
+        return r
 
-
+    @retryable_async(exceptions=[ClientResponseError])
     async def post(self, url, *args, **kwargs):
         domain = urlparse(url).netloc
         await self.delay_access(domain, delay)
-        return await super().post(url, *args, **kwargs)
+        r =  await super().post(url, *args,**kwargs)
+        return r
         
 class AsyncRequest:
 
@@ -37,6 +42,7 @@ class AsyncRequest:
         return AsyncSession(**kwargs)
 
     @classmethod
+    @retryable_async(exceptions=[ClientResponseError])
     async def get(cls, url, *args, delay=0.01, session=None, **kwargs):
         if not session:
             async with cls.new_session() as session:

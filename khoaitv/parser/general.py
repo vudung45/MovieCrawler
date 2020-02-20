@@ -1,9 +1,11 @@
 from khoaitv.config import Config
-from utils.helper import normalize_url
+from utils.helper import normalize_url, inject_async_session
 from custom_request.request import AsyncSession, AsyncRequest
 from bs4 import BeautifulSoup
 from typing import List, Iterable, Tuple, Dict
 import time
+import asyncio
+
 
 def _get_num_pages(content: str, debug=False) -> int:
             n_pages = 1
@@ -53,12 +55,9 @@ class GeneralParser:
         return links
 
     @classmethod
+    @inject_async_session
     async def get_movie_urls(cls, category_url: str, session=None, debug=False) -> List[str]:
-        create_session = session is None
-        # if a session is not provided then we create one
-        if not session:
-            session = AsyncSession()
-
+        
         movie_urls = []
         body, request_info = await AsyncRequest.get(category_url, delay=Config.REQUEST_DELAY, session=session)
         num_pages = _get_num_pages(body)
@@ -70,8 +69,6 @@ class GeneralParser:
                                 for page in range(2 ,num_pages+1)]
         parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session) \
                                                     for url in page_links), return_exceptions=True)
-        if create_session: # close session when done
-            await session.close()
 
         # filter out failed routines
         for page_url, routine in zip(page_links, parse_routines):
@@ -94,15 +91,15 @@ class GeneralParser:
         return movie_urls
 
     @classmethod
-    async def get_categorized_movie_urls(cls, category_urls: Iterable[str], concurrent=True, debug=False) -> Tuple[Dict[str, List[str]], int]:
+    @inject_async_session
+    async def get_categorized_movie_urls(cls, category_urls: Iterable[str], concurrent=True, session = None, debug=False) -> Tuple[Dict[str, List[str]], int]:
         categorized_movies = {}
         total = 0
         #concurrently scrape movie urls for all categories
         if concurrent:
-            async with AsyncSession() as session:
-                parse_routines = await asyncio.gather(*( \
-                        cls.get_movie_urls(url, session=session, debug=debug) \
-                            for url in category_urls), return_exceptions=True)
+            parse_routines = await asyncio.gather(*( \
+                    cls.get_movie_urls(url, session=session, debug=debug) \
+                        for url in category_urls))
     
             for routine, category in zip(parse_routines, category_urls):
                 if isinstance(routine, Exception):
@@ -114,9 +111,8 @@ class GeneralParser:
         else:
             for category in category_urls:
                 try:
-                    async with AsyncSession() as session:
-                        categorized_movies[category] = await cls.get_movie_urls(category, session=session, debug=debug)
-                        total += len(categorized_movies[category])
+                    categorized_movies[category] = await cls.get_movie_urls(category, session=session, debug=debug)
+                    total += len(categorized_movies[category])
                 except Exception as e:
                     if debug:
                         print(f"Failed to grab movie links for category {category}. Error: \n {repr(e)}")
