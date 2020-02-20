@@ -2,6 +2,8 @@ import re
 from custom_request.request import AsyncSession
 import functools
 import asyncio
+from bson import ObjectId
+import json
 
 def normalize_url(url):
     return re.sub(r"/+$","", url)
@@ -36,3 +38,8 @@ def inject_async_session(func):
     return wrapped
 
 
+class JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        return json.JSONEncoder.default(self, o)

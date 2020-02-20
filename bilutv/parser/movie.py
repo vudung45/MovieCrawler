@@ -32,13 +32,13 @@ class MovieParser:
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:
-            urls = [li.find("a")["href"] for li in html_parse.find("div", class_="episode-main").find("ul").findAll("li")]
+            urls = {li.find("a").text.strip() : li.find("a")["href"] for li in html_parse.find("ul", class_="list-episode").findAll("li")}
             return urls
         except Exception as e:
             if debug:
                 print(f"get_episodes_urls(). Error: \n {repr(e)}")
 
-        return []
+        return {}
 
     @classmethod
     @inject_async_session
@@ -88,10 +88,10 @@ class MovieParser:
 
 if __name__ == "__main__":
     eloop = asyncio.new_event_loop()
-    metadata = eloop.run_until_complete(MovieParser.get_movie_info("https://bilutv.org/phim-son-hai-kinh-chi-thuong-co-mat-uoc-i1-16271.html", debug=True))
-    print(metadata)
-    #episodes_urls = eloop.run_until_complete(MovieParser.get_episodes_urls(metadata["watch_url"], debug=True))
-    #print(episodes_urls)
+    #metadata = eloop.run_until_complete(MovieParser.get_movie_info("https://bilutv.org/phim-son-hai-kinh-chi-thuong-co-mat-uoc-i1-16271.html", debug=True))
+    #print(metadata)
+    episodes_urls = eloop.run_until_complete(MovieParser.get_episodes_urls("https://bilutv.org/phim-moi-tinh-dau-cua-thieu-nu-tung-trai-tap-1-i1-16211.192629.html", debug=True))
+    print(episodes_urls)
 
 
 
