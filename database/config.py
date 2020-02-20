@@ -1,7 +1,7 @@
 import json
-
+import os
 class Config:
-    LOGIN_CREDENTIALS = ""
+    LOGIN_CREDENTIALS = os.env["MONGOURI"]
 
 
 with open("./credentials/mongodb.json", "r") as f:
