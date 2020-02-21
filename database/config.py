@@ -1,7 +1,7 @@
 import json
 import os
 class Config:
-    LOGIN_CREDENTIALS = os.environ["MONGOURI"]
+    LOGIN_CREDENTIALS = os.environ.get("MONGOURI")
 
 
 try:

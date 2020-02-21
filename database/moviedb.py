@@ -13,6 +13,7 @@ class MovieCollection(pymongo.collection.Collection):
 
     TEMPLATE =  {
         "title": None,
+        "title_vietnamese": None,
         "movieInstances": []
     }
     def __init__(self):
@@ -64,7 +65,7 @@ class MovieInstanceCollection(pymongo.collection.Collection): # multiple MovieIn
 
         matching_movie = MovieCollection.find_one({
                 "title": {
-                  "$regex" : ".*".join(words)
+                  "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
                 }
             })
 

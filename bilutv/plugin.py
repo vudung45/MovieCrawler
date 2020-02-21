@@ -5,6 +5,7 @@ from custom_request.request import AsyncSession
 from utils.helper import chunk_iterator
 from bilutv.config import Config
 import asyncio
+from pymongo import ReturnDocument
 
 
 class BiluTV:
@@ -17,34 +18,18 @@ class BiluTV:
         print(f"Total links: {len(movies_urls)}")
 
         async def _update_db_wrapper(metadata):
-            
+             # check if we have already added this movie
+            instance = await AsyncMovieInstanceCollection.find_one_and_update({"movie_id": metadata["movie_id"]}, 
+                                                                              {"$set": metadata},
+                                                                              upsert=True, 
+                                                                              return_document=ReturnDocument.AFTER)
+
             # merge all instances of the same movie on different sites into one main instance
             # create the main movie instance if not exists
-            matching_movie = await AsyncMovieInstanceCollection.findCorrespondingMovie(instance=metadata)
-            movie_object_id = None
-            if not matching_movie:
-                movie_object_id = await AsyncMovieCollection.create_new_movie({"title": metadata["title"]})
-            else:
-                movie_object_id = matching_movie["_id"]
-
-            if not movie_object_id:
-                return
-
-            # check if we have already added this movie
-            existing_instance = await AsyncMovieInstanceCollection.find_one({"movie_id": metadata["movie_id"]})
-            metadata["local_movie_id"] = movie_object_id # we use this to serve our purpuses locally
-            instance_object_id = None
-            if not existing_instance:
-                instance_object_id = (await AsyncMovieInstanceCollection.insert_one(metadata)).inserted_id
-                if debug:
-                    print(f"Inserting new object {instance_object_id}" )
-            else:
-                instance_object_id = existing_instance["_id"]
-                if debug:
-                    print(f"Updating object {instance_object_id}")
-
-            await AsyncMovieCollection.add_movie_instance(movie_object_id, instance_object_id)
-
+            matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
+            movie_object_id = matching_movie["_id"]
+            print(movie_object_id)
+    
         async def _routine_wrapper(url, session):
             movieMetadata = []
             metadata = None
@@ -67,17 +52,19 @@ class BiluTV:
 
     @classmethod
     async def mergeMovies(cls, debug=False):
-        async for instance in AsyncMovieInstanceCollection.find({"origin" : Config.IDENTIFIER}):
+        instances =  await AsyncMovieInstanceCollection.find({"origin" : Config.IDENTIFIER}).to_list(length=None)
+        if debug:
+            print(instances)
+        # stop = False
+        async def _routine(instance):
             # merge all instances of the same movie on different sites into one main instance
             # create the main movie instance if not exists
-            matching_movie = await AsyncMovieInstanceCollection.findCorrespondingMovie(instance=instance)
-            movie_object_id = None
-            if not matching_movie:
-                movie_object_id = await AsyncMovieCollection.create_new_movie({"title": instance["title"]})
-            else:
-                movie_object_id = matching_movie["_id"]
-            
-            print(await AsyncMovieCollection.add_movie_instance(movie_object_id, instance["_id"]))
+            if debug:
+                print(f"Finding matching movie for instance: {str(instance)}")
+            matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
+            print(matching_movie)
+
+        await asyncio.gather(*(_routine(instance) for instance in instances))
 
 
 if __name__ == "__main__":

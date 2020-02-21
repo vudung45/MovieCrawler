@@ -7,6 +7,7 @@ import copy
 import string
 import re
 import asyncio
+from pymongo import ReturnDocument
 
 client = motor.motor_asyncio.AsyncIOMotorClient(Config.LOGIN_CREDENTIALS)
 MOVIES_DB = client["movies_db"]
@@ -24,6 +25,7 @@ class AsyncMovieCollection(motor.motor_asyncio.AsyncIOMotorCollection):
 
     TEMPLATE =  {
         "title": None,
+        "title_vietnamese": None,
         "movieInstances": []
     }
 
@@ -51,14 +53,22 @@ class AsyncMovieCollection(motor.motor_asyncio.AsyncIOMotorCollection):
         
         return await self.find_one_and_update({"_id" : objectId}, update_query)
 
+    def generateTemplate(self, metadata):
+        insertData =  {}
+        for key in self.TEMPLATE:
+            if key == "movieInstances":
+                continue
+            insertData[key] = metadata.get(key)
+        return insertData
+
     async def create_new_movie(self, metadata) -> ObjectId:
         insertData =  {}
         for key in self.TEMPLATE:
             if key == "movieInstances":
                 continue
-            insertData[key] = metadata.get(key) 
+            insertData[key] = metadata.get(key)
 
-        return (await self.insert_one(insertData)).inserted_id
+        return (await self.find_one_and_update(insertData, insertData, upsert=True))["_id"]
 
 
 
@@ -83,16 +93,70 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
 
             instance = await self.find_one({ "_id": objectId })
 
+        objectId = instance["_id"]
+
+
         movie_title = instance["title"]
         movie_title = movie_title.translate(str.maketrans('', '', string.punctuation))
 
-        words = re.findall(r"\w+", movie_title)
+        movie_vtitle = instance["title_vietnamese"]
+        movie_vtitle = movie_vtitle.translate(str.maketrans('', '', string.punctuation))
 
-        matching_movie = await AsyncMovieCollection.find_one({
-                "title": {
-                  "$regex" : "(?i)" + "\W+".join(words)
-                }
+        words = re.findall(r"\w+", movie_title)
+        vwords = re.findall(r"\w+", movie_vtitle)
+
+        matching_movie = await AsyncMovieCollection.find_one({ "$or": [ 
+                    {"title_vietnamese": {
+                      "$regex" : "(?i)^\W*" + "\W+".join(vwords) + "\W*$"
+                    }}, 
+                    {"title": {
+                      "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
+                    }}
+                ]
             })
+
+        return matching_movie
+
+    async def mergeWithCorrespondingMovie(self, objectId=None, instance=None) -> Dict[Any, Any]:
+        if not instance: 
+            if(type(objectId) == str):
+                objectId = ObjectId(objectId)
+
+            instance = await self.find_one({ "_id": objectId })
+
+        objectId = instance["_id"]
+
+        movie_title = instance["title"]
+        movie_title = movie_title.translate(str.maketrans('', '', string.punctuation))
+
+        movie_vtitle = instance["title_vietnamese"]
+        movie_vtitle = movie_vtitle.translate(str.maketrans('', '', string.punctuation))
+
+        words = re.findall(r"\w+", movie_title)
+        vwords = re.findall(r"\w+", movie_vtitle)
+
+        matching_movie = await AsyncMovieCollection.find_one_and_update({ "$or": [ 
+                    {"title_vietnamese": {
+                      "$regex" : "(?i)^\W*" + "\W+".join(vwords) + "\W*$"
+                    }}, 
+                    {"title": {
+                      "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
+                    }}
+                ]
+            }, {
+                "$addToSet": {
+                        "movieInstances": objectId
+                }
+            },
+            upsert=True,
+            return_document=ReturnDocument.AFTER,
+        )
+
+        if("title" not in matching_movie): # new movie
+            matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
+                                                  {"$set" : AsyncMovieCollection.generateTemplate(instance)}, return_document=ReturnDocument.AFTER)
+
+        await AsyncMovieCollection.update_one({"_id": objectId}, {"$set": {"local_movie_id": matching_movie["_id"]}})
 
         return matching_movie
 
