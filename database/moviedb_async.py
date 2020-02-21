@@ -156,7 +156,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
             matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
                                                   {"$set" : AsyncMovieCollection.generateTemplate(instance)}, return_document=ReturnDocument.AFTER)
 
-        await AsyncMovieCollection.update_one({"_id": objectId}, {"$set": {"local_movie_id": matching_movie["_id"]}})
+        await AsyncMovieInstanceCollection.update_one({"_id": objectId}, {"$set": {"local_movie_id": matching_movie["_id"]}})
 
         return matching_movie
 
@@ -165,12 +165,12 @@ AsyncMovieInstanceCollection = AsyncMovieInstanceCollection()
 
 
 async def assign_local_id():
+    movies = await AsyncMovieCollection.find({}).to_list(length=None)
 
-    async for movie in AsyncMovieCollection.find({}):
-        print(await asyncio.gather(*(
-            AsyncMovieInstanceCollection.find_one_and_update({"_id": instance}, {"$set" : {
-                "local_movie_id": movie["_id"]
-            }}) for instance in movie["movieInstances"])))
+    print(await asyncio.gather(*(
+        AsyncMovieInstanceCollection.find_one_and_update({"_id": instance}, {"$set" : {
+            "local_movie_id": movie["_id"]
+        }}) for movie in movies for instance in movie["movieInstances"])))
 
 
 if __name__ == "__main__":

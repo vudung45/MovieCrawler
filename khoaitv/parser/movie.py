@@ -32,17 +32,17 @@ class MovieParser:
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:
-            ul = html_parse.find("div", class_="episode-main").find("ul")
+            ul = html_parse.find("div", class_="episode-film").find("ul")
             if ul:
-                urls = {li.find("a").text.strip(): li.find("a")["href"] for li in ul.findAll("li")}
+                urls = [{li.find("a").text.strip(): li.find("a")["href"]} for li in ul.findAll("li")]
                 return urls
             else: # non-episodic
-                return {"Full": url}
+                return [{"Full": url+"-tap-1"}]
         except Exception as e:
             if debug:
                 print(f"get_episodes_urls(). Error: \n {repr(e)}")
 
-        return {}
+        return []
 
     @classmethod
     @inject_async_session
