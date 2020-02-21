@@ -28,7 +28,7 @@ async def search(request):
     print(data)
     if data.get("title"): #search by title
         try:
-            limit = data.get("limit") ? data["limit"] : 20
+            limit = data["limit"] if data.get("limit") else 20
             movies = await AsyncMovieCollection.find({"$or": [
                                     {"title_vietnamese": {"$regex": f"(?i).*{data['title']}"}}, 
                                     {"title": {"$regex": f"(?i).*{data['title']}"}}]}).to_list(length=limit)
