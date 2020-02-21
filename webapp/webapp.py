@@ -28,7 +28,9 @@ async def search(request):
     if data.get("title"): #search by title
         try:
             movies = {}
-            async for movie in AsyncMovieCollection.find({"title": {"$regex": f"(?i).*{data['title']}"}}):
+            async for movie in AsyncMovieCollection.find({"$or": [
+                                    {"title_vietnamese": {"$regex": f"(?i).*{data['title']}"}}, 
+                                    {"title": {"$regex": f"(?i).*{data['title']}"}}]}):
                 if movie.get("movieInstances"):
                     movies[str(movie["_id"])] = [await AsyncMovieInstanceCollection.find_one({"_id": ObjectId(instance_id)}) for instance_id in movie["movieInstances"]]
                     movies[str(movie["_id"])] = [item for item in movies[str(movie["_id"])] if item is not None] 
