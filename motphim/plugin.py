@@ -1,15 +1,15 @@
 
 from database.moviedb_async import AsyncMovieCollection, AsyncMovieInstanceCollection
-from khoaitv.parser.general import GeneralParser
-from khoaitv.parser.movie import MovieParser
+from motphim.parser.general import GeneralParser
+from motphim.parser.movie import MovieParser
 from custom_request.request import AsyncSession
 from utils.helper import chunk_iterator
 import asyncio
-from khoaitv.config import Config
+from motphim.config import Config
 from pymongo import ReturnDocument
 
 
-class KhoaiTV:
+class Motphim:
 
     @classmethod
     async def populate(cls, debug=False):
@@ -20,16 +20,21 @@ class KhoaiTV:
 
         async def _update_db_wrapper(metadata):
              # check if we have already added this movie
-            instance = await AsyncMovieInstanceCollection.find_one_and_update({"movie_id": metadata["movie_id"]}, 
-                                                                              {"$set": metadata},
-                                                                              upsert=True, 
-                                                                              return_document=ReturnDocument.AFTER)
+            print("here")
+            try:
+                instance = await AsyncMovieInstanceCollection.find_one_and_update({"movie_id": metadata["movie_id"]}, 
+                                                                                  {"$set": metadata},
+                                                                                  upsert=True, 
+                                                                                  return_document=ReturnDocument.AFTER)
 
-            # merge all instances of the same movie on different sites into one main instance
-            # create the main movie instance if not exists
-            matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
-            movie_object_id = matching_movie["_id"]
-            print(movie_object_id)
+                # merge all instances of the same movie on different sites into one main instance
+                # create the main movie instance if not exists
+                matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
+                movie_object_id = matching_movie["_id"]
+                print(movie_object_id)
+            except Exeption as e:
+                if debug:
+                    print(e)
     
         async def _routine_wrapper(url, session):
             movieMetadata = []
@@ -40,9 +45,8 @@ class KhoaiTV:
                 if debug:
                     print(e)
                 return
-
-            if metadata and "movie_id" in metadata and metadata["movie_id"]:
-                await _update_db_wrapper(metadata)
+           # print(metadata)
+            await _update_db_wrapper(metadata)
 
 
         # process 20 urls at a time to avoid 500 http error
@@ -69,8 +73,8 @@ class KhoaiTV:
 
 if __name__ == "__main__":
     eloop = asyncio.get_event_loop()
-    #metadata = eloop.run_until_complete(KhoaiTV.populate(debug=True))
-    eloop.run_until_complete(KhoaiTV.mergeMovies(debug=True))
+    metadata = eloop.run_until_complete(Motphim.populate(debug=True))
+    #eloop.run_until_complete(Motphim.mergeMovies(debug=True))
 
 
 
