@@ -14,6 +14,7 @@ class MovieCollection(pymongo.collection.Collection):
     TEMPLATE =  {
         "title": None,
         "title_vietnamese": None,
+        "image": None,
         "movieInstances": []
     }
     def __init__(self):

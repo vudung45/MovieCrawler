@@ -19,10 +19,9 @@ class Motphim:
         print(f"Total links: {len(movies_urls)}")
 
         async def _update_db_wrapper(metadata):
-             # check if we have already added this movie
-            print("here")
+             # check if we have already added this movie 
             try:
-                instance = await AsyncMovieInstanceCollection.find_one_and_update({"movie_id": metadata["movie_id"]}, 
+                instance = await AsyncMovieInstanceCollection.find_one_and_update({"origin": Config.IDENTIFIER, "movie_id": metadata["movie_id"]}, 
                                                                                   {"$set": metadata},
                                                                                   upsert=True, 
                                                                                   return_document=ReturnDocument.AFTER)

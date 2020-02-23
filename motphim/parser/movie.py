@@ -57,6 +57,7 @@ class MovieParser:
             }
 
             metadata["watch_url"] = await self.get_watch_button_url(url, content, session=session, debug=True)
+            metadata["image"] = html_parse.find("div", class_="poster").find("img")["src"]
             metadata["vietnamese_description"] = html_parse.find("div", class_="tabs-content").find("div", class_="tab").text.strip(),
             fields = [dt.text.strip()[:-1] for dt in html_parse.find("div", class_="dinfo").find("dl", class_="col").findAll("dt")]
             contents = [dd.text.strip() for dd in html_parse.find("div", class_="dinfo").find("dl", class_="col").findAll("dd")]

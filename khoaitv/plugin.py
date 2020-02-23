@@ -19,17 +19,21 @@ class KhoaiTV:
         print(f"Total links: {len(movies_urls)}")
 
         async def _update_db_wrapper(metadata):
-             # check if we have already added this movie
-            instance = await AsyncMovieInstanceCollection.find_one_and_update({"movie_id": metadata["movie_id"]}, 
-                                                                              {"$set": metadata},
-                                                                              upsert=True, 
-                                                                              return_document=ReturnDocument.AFTER)
+             # check if we have already added this movie 
+            try:
+                instance = await AsyncMovieInstanceCollection.find_one_and_update({"origin": Config.IDENTIFIER, "movie_id": metadata["movie_id"]}, 
+                                                                                  {"$set": metadata},
+                                                                                  upsert=True, 
+                                                                                  return_document=ReturnDocument.AFTER)
 
-            # merge all instances of the same movie on different sites into one main instance
-            # create the main movie instance if not exists
-            matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
-            movie_object_id = matching_movie["_id"]
-            print(movie_object_id)
+                # merge all instances of the same movie on different sites into one main instance
+                # create the main movie instance if not exists
+                matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
+                movie_object_id = matching_movie["_id"]
+                print(movie_object_id)
+            except Exeption as e:
+                if debug:
+                    print(e)
     
         async def _routine_wrapper(url, session):
             movieMetadata = []
@@ -40,9 +44,8 @@ class KhoaiTV:
                 if debug:
                     print(e)
                 return
-
-            if metadata and "movie_id" in metadata and metadata["movie_id"]:
-                await _update_db_wrapper(metadata)
+           # print(metadata)
+            await _update_db_wrapper(metadata)
 
 
         # process 20 urls at a time to avoid 500 http error

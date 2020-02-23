@@ -54,6 +54,7 @@ class MovieParser:
                 "title_vietnamese": html_parse.find("h1", class_="name").text.strip()
             }
             metadata["watch_url"] = html_parse.find("a", class_="btn-see btn btn-watch")["href"]
+            metadata["image"] = html_parse.find("div", class_="poster").find("img")["src"]
             metadata["vietnamese_description"] = html_parse.find("div", class_="film-content").find("p").text.strip()
             for li in html_parse.find("ul", class_="meta-data").findAll("li"):
                 # Diễn viên: Emma Stone, Zac Efron
