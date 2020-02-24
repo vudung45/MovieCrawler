@@ -166,10 +166,18 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
             upsert=True,
             return_document=ReturnDocument.AFTER,
         )
+        movie_template = AsyncMovieCollection.generateTemplate(instance)
 
         if("title" not in matching_movie): # new movie
             matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
-                                                  {"$set" : AsyncMovieCollection.generateTemplate(instance)}, return_document=ReturnDocument.AFTER)
+                                                  {"$set" : movie_template}, return_document=ReturnDocument.AFTER)
+
+        missing_template = {k:v for k in movie_template if k not in matching_movie}
+
+        if len(missing_template):
+            matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
+                                                  {"$set" : missing_template}, return_document=ReturnDocument.AFTER)
+
 
         await AsyncMovieInstanceCollection.update_one({"_id": objectId}, {"$set": {"local_movie_id": matching_movie["_id"]}})
 

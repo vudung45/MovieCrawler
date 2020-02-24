@@ -22,9 +22,12 @@ class AsyncSession(aiohttp.ClientSession):
         self.access[domain] = time.time()
 
     @retryable_async(exceptions=[ClientResponseError])
-    async def get(self, url, *args, delay=0.01, **kwargs):
+    async def get(self, url, *args, delay=0.01, use_proxy=False, **kwargs):
         domain = urlparse(url).netloc
         await self.delay_access(domain, delay)
+        if use_proxy:
+            url = f"https://feedback.googleusercontent.com/gadgets/proxy?container=focus&url={url}"
+
         r =  await super().get(url, *args, **kwargs)
         return r
 

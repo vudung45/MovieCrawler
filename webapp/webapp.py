@@ -19,6 +19,7 @@ MOVIE_PARSERS = {
     khoaitv.config.Config.IDENTIFIER : khoaitv.parser.movie.MovieParser,
     bilutv.config.Config.IDENTIFIER : bilutv.parser.movie.MovieParser,
     motphim.config.Config.IDENTIFIER : motphim.parser.movie.MovieParser,
+    xemphimmoi.config.Config.IDENTIFIER : xemphimmoi.parser.movie.MovieParser,
 }
 
 EPISODE_UPDATE_TTL = 3600.0 # 1 hour
