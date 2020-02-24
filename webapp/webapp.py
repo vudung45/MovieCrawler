@@ -31,9 +31,14 @@ async def search(request):
     if data.get("title"): #search by title
         try:
             limit = data["limit"] if data.get("limit") else 20
-            movies = await AsyncMovieCollection.find({"$or": [
-                                    {"title_vietnamese": {"$regex": f"(?i).*{data['title']}"}}, 
-                                    {"title": {"$regex": f"(?i).*{data['title']}"}}]}).to_list(length=limit)
+            movies = await AsyncMovieCollection.find(
+                                {
+                                    "$or":  [
+                                                {"title_vietnamese": {"$regex": f"(?i).*{data['title']}"}}, 
+                                                {"title_vietnamese_noaccent": {"$regex": f"(?i).*{data['title']}"}}, 
+                                                {"title": {"$regex": f"(?i).*{data['title']}"}}
+                                            ]
+                                }).to_list(length=limit)
 
 
             return web.json_response({"status": 1, "response": json.loads(JSONEncoder().encode(movies))})
@@ -42,6 +47,8 @@ async def search(request):
             return web.json_response({"status": 0,  "error": "Something went wrong!"}, status=500)
 
     return web.json_response({"status": 0, "error": "Missing paramaters"}, status=501)
+
+
 
 
 @routes.get('/info')
@@ -130,6 +137,6 @@ async def get_episodes(instance_id, forceUpdate=False):
 
 if __name__ == "__main__":
     app = web.Application()
-    app.add_routes(routes)
+    app.router.add_routes(routes)
     web.run_app(app, port=os.getenv('PORT') or 5002)
     

@@ -8,9 +8,11 @@ import string
 import re
 import asyncio
 from pymongo import ReturnDocument
+from utils.helper import no_accent_vietnamese
 
 client = motor.motor_asyncio.AsyncIOMotorClient(Config.LOGIN_CREDENTIALS)
 MOVIES_DB = client["movies_db"]
+
 
 
 
@@ -26,7 +28,10 @@ class AsyncMovieCollection(motor.motor_asyncio.AsyncIOMotorCollection):
     TEMPLATE =  {
         "title": None,
         "title_vietnamese": None,
-        "movieInstances": []
+        "title_vietnamese_noaccent": None,
+        "movieInstances": [],
+        "image": None,
+        "year": None
     }
 
     def __init__(self):
@@ -59,6 +64,8 @@ class AsyncMovieCollection(motor.motor_asyncio.AsyncIOMotorCollection):
             if key == "movieInstances":
                 continue
             insertData[key] = metadata.get(key)
+        if insertData.get("title_vietnamese"):
+            insertData["title_vietnamese_noaccent"] = no_accent_vietnamese(insertData["title_vietnamese"])
         return insertData
 
     async def create_new_movie(self, metadata) -> ObjectId:
@@ -105,14 +112,22 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
         words = re.findall(r"\w+", movie_title)
         vwords = re.findall(r"\w+", movie_vtitle)
 
-        matching_movie = await AsyncMovieCollection.find_one({ "$or": [ 
-                    {"title_vietnamese": {
-                      "$regex" : "(?i)^\W*" + "\W+".join(vwords) + "\W*$"
-                    }}, 
-                    {"title": {
-                      "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
-                    }}
-                ]
+        matching_movie = await AsyncMovieCollection.find_one({
+            "$and": [   
+                        { 
+                            "$or": [ 
+                                        {"title_vietnamese": {
+                                          "$regex" : "(?i)^\W*" + "\W+".join(vwords) + "\W*$"
+                                        }}, 
+                                        {"title": {
+                                          "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
+                                        }}
+                                    ]
+                        },
+                        {
+                            "year": instance["year"]
+                        }
+                    ]
             })
 
         return matching_movie

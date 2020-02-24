@@ -63,7 +63,7 @@ class MovieParser:
                 if field in SWITCHER:
                     metadata[SWITCHER[field]] = info[1].strip() # clean leading white spaces
 
-            metadata["movie_id"] = re.match(r".*-(\d*)\.html$", url)[1]
+            metadata["movie_id"] = re.match(r".*-(\d*)\.html$", url)[1].strip()
             metadata["origin"] = Config.IDENTIFIER
             return metadata
         except Exception as e:

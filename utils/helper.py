@@ -4,6 +4,7 @@ import functools
 import asyncio
 from bson import ObjectId
 import json
+import re
 
 def normalize_url(url):
     return re.sub(r"/+$","", url)
@@ -43,3 +44,20 @@ class JSONEncoder(json.JSONEncoder):
         if isinstance(o, ObjectId):
             return str(o)
         return json.JSONEncoder.default(self, o)
+
+INTAB = "ạảãàáâậầấẩẫăắằặẳẵóòọõỏôộổỗồốơờớợởỡéèẻẹẽêếềệểễúùụủũưựữửừứíìịỉĩýỳỷỵỹđẠẢÃÀÁÂẬẦẤẨẪĂẮẰẶẲẴÓÒỌÕỎÔỘỔỖỒỐƠỜỚỢỞỠÉÈẺẸẼÊẾỀỆỂỄÚÙỤỦŨƯỰỮỬỪỨÍÌỊỈĨÝỲỶỴỸĐ"
+INTAB = [ch for ch in INTAB]
+
+
+OUTTAB = "a" * 17 + "o" * 17 + "e" * 11 + "u" * 11 + "i" * 5 + "y" * 5 + "d" + \
+         "A" * 17 + "O" * 17 + "E" * 11 + "U" * 11 + "I" * 5 + "Y" * 5 + "D"
+
+r = re.compile("|".join(INTAB))
+replaces_dict = dict(zip(INTAB, OUTTAB))
+
+
+def no_accent_vietnamese(utf8_str):
+    return r.sub(lambda m: replaces_dict[m.group(0)], utf8_str)
+
+if __name__ == "__main__":
+    print(no_accent_vietnamese("Vãi cả đái"))

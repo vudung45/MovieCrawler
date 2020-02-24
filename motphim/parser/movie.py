@@ -66,7 +66,7 @@ class MovieParser:
                 if field in SWITCHER:
                     metadata[SWITCHER[field]] = content.strip() # clean leading white spaces
 
-            metadata["movie_id"] = re.match(r".*-(\d*).html$", url)[1]
+            metadata["movie_id"] = re.match(r".*-(\d*).html$", url)[1].strip()
             metadata["origin"] = Config.IDENTIFIER
             return metadata
         except Exception as e:
@@ -97,7 +97,7 @@ class MovieParser:
 
 if __name__ == "__main__":
     eloop = asyncio.new_event_loop()
-    metadata = eloop.run_until_complete(MovieParser.get_movie_info("https://motphim.net/phim/troi-dep-em-se-den-7689.html", debug=True))
+    metadata = eloop.run_until_complete(MovieParser.get_movie_info("https://motphim.net/phim/chien-tranh-giua-cac-vi-sao-7-than-luc-thuc-tinh-548.html", debug=True))
     print(metadata)
     episodes_urls = eloop.run_until_complete(MovieParser.get_episodes_urls(metadata["watch_url"], debug=True))
     print(episodes_urls)
