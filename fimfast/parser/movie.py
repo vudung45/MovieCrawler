@@ -41,16 +41,19 @@ class MovieParser:
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:
-            episode_id = html_parse.find("div", class_="container")["data-id"].strip()
-            resp, _ = await AsyncRequest.get(GET_EPISODES_API.format(episode_id=episode_id), headers = {**FAKE_HEADERS,
-                                                    "Referer": url, 
-                                                    "X-Requested-With": "XMLHttpRequest",
-                                                    "Cookie": f"__cfduid={str(uuid.uuid1()).replace('-','')}"}, 
-                                        delay=Config.REQUEST_DELAY, session=session)
-            jsonResp = json.loads(resp)
+            if html_parse.find("div", class_="tab-episode"):
+                episode_id = html_parse.find("div", class_="container")["data-id"].strip()
+                resp, _ = await AsyncRequest.get(GET_EPISODES_API.format(episode_id=episode_id), headers = {**FAKE_HEADERS,
+                                                        "Referer": url, 
+                                                        "X-Requested-With": "XMLHttpRequest",
+                                                        "Cookie": f"__cfduid={str(uuid.uuid1()).replace('-','')}"}, 
+                                            delay=Config.REQUEST_DELAY, session=session)
+                jsonResp = json.loads(resp)
 
-            urls = [ { str(item["name"]) : urllib.parse.urljoin(Config.BASE_URL, item["link"])} for item in jsonResp["data"]]
-            return urls
+                urls = [ { str(item["name"]) : urllib.parse.urljoin(Config.BASE_URL, item["link"])} for item in jsonResp["data"]]
+                return urls
+            else: # not an episodic movie
+                return [{ "FULL": url}]
         except Exception as e:
             if debug:
                 print(f"get_episodes_urls(). Error: \n {repr(e)}")
@@ -105,9 +108,9 @@ class MovieParser:
 
 if __name__ == "__main__":
     eloop = asyncio.new_event_loop()
-    metadata = eloop.run_until_complete(MovieParser.get_movie_info("https://fimfast.com/tang-lop-itaewon", debug=True))
+    metadata = eloop.run_until_complete(MovieParser.get_movie_info("https://fimfast.com/biet-doi-sieu-anh-hung-4-endgame", debug=True))
     print(metadata)
-    episodes_urls = eloop.run_until_complete(MovieParser.get_episodes_urls("https://fimfast.com/tang-lop-itaewon", debug=True))
+    episodes_urls = eloop.run_until_complete(MovieParser.get_episodes_urls("https://fimfast.com/biet-doi-sieu-anh-hung-4-endgame", debug=True))
     print(episodes_urls)
 
 
