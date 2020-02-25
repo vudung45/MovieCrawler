@@ -22,7 +22,7 @@ MOVIE_PARSERS = {
     bilutv.config.Config.IDENTIFIER : bilutv.parser.movie.MovieParser,
     motphim.config.Config.IDENTIFIER : motphim.parser.movie.MovieParser,
     xemphimplus.config.Config.IDENTIFIER : xemphimplus.parser.movie.MovieParser,
-    fimfast.config.Config.IDENTIFIER : fimfast.config.Config.MovieParser
+    fimfast.config.Config.IDENTIFIER : fimfast.config.parser.movie.MovieParser
 }
 
 EPISODE_UPDATE_TTL = 3600.0 # 1 hour
