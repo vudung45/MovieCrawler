@@ -39,9 +39,9 @@ async def search(request):
             movies = await AsyncMovieCollection.find(
                                 {
                                     "$or":  [
-                                                {"title_vietnamese": {"$regex": f"(?i).*{".+".join(words)}"}}, 
-                                                {"title_vietnamese_noaccent": {"$regex": f"(?i).*{".+".join(words)}"}}, 
-                                                {"title": {"$regex": f"(?i).*{".+".join(words)}"}}
+                                                {"title_vietnamese": {"$regex": f"(?i).*{'.+'.join(words)}"}}, 
+                                                {"title_vietnamese_noaccent": {"$regex": f"(?i).*{'.+'.join(words)}"}}, 
+                                                {"title": {"$regex": f"(?i).*{'.+'.join(words)}"}}
                                             ]
                                 }).to_list(length=limit)
 

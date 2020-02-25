@@ -34,6 +34,7 @@ class Motphim:
             except Exeption as e:
                 if debug:
                     print(e)
+                raise e
     
         async def _routine_wrapper(url, session):
             movieMetadata = []
@@ -44,7 +45,7 @@ class Motphim:
                 if debug:
                     print(e)
                 return
-           # print(metadata)
+            print(metadata)
             await _update_db_wrapper(metadata)
 
 

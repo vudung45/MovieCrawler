@@ -18,3 +18,4 @@ class Config:
     CATEGORY_PAGINATION_URL = FakeFString(format_logic)
     REQUEST_DELAY = 0.2 # in seconds
     IDENTIFIER = "motphim"
+    USE_PROXY = True

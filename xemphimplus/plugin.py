@@ -34,6 +34,7 @@ class XemphimPlus:
             except Exception as e:
                 if debug:
                     print(e)
+                raise e
     
         async def _routine_wrapper(url, session):
             movieMetadata = []

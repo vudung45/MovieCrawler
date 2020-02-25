@@ -29,7 +29,7 @@ class MovieParser:
         URL has to be a watch button url
         '''
         if not content:
-            content, _ = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
+            content, _ = await AsyncRequest.get(url, use_proxy=Config.USE_PROXY, delay=Config.REQUEST_DELAY, session=session)
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:
@@ -49,7 +49,7 @@ class MovieParser:
 
         try:
             if not content:
-                content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
+                content, request_info = await AsyncRequest.get(url, use_proxy=Config.USE_PROXY, delay=Config.REQUEST_DELAY, session=session)
             html_parse = BeautifulSoup(content, "html.parser")
             metadata = {
                 "title": html_parse.find("span", class_="real-name").text.strip(),
@@ -80,7 +80,7 @@ class MovieParser:
     @inject_async_session
     async def get_watch_button_url(self, url: str, content=None, session = None, debug=False) -> Optional[str]:
         if not content:
-            content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
+            content, request_info = await AsyncRequest.get(url, use_proxy=Config.USE_PROXY, delay=Config.REQUEST_DELAY, session=session)
 
         try:
             html_parse = BeautifulSoup(content, "html.parser")
