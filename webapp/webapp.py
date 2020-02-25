@@ -3,6 +3,7 @@ import khoaitv
 import bilutv
 import motphim
 import xemphimplus
+import fimfast
 from database.moviedb_async import AsyncMovieCollection, AsyncMovieInstanceCollection
 from aiohttp import web, ClientSession
 from bson.objectid import ObjectId
@@ -21,6 +22,7 @@ MOVIE_PARSERS = {
     bilutv.config.Config.IDENTIFIER : bilutv.parser.movie.MovieParser,
     motphim.config.Config.IDENTIFIER : motphim.parser.movie.MovieParser,
     xemphimplus.config.Config.IDENTIFIER : xemphimplus.parser.movie.MovieParser,
+    fimfast.config.Config.IDENTIFIER : fimfast.config.Config.IDENTIFIER
 }
 
 EPISODE_UPDATE_TTL = 3600.0 # 1 hour

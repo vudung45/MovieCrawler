@@ -1,14 +1,14 @@
 from database.moviedb_async import AsyncMovieCollection, AsyncMovieInstanceCollection
-from xemphimplus.parser.general import GeneralParser
-from xemphimplus.parser.movie import MovieParser
+from fimfast.parser.general import GeneralParser
+from fimfast.parser.movie import MovieParser
 from custom_request.request import AsyncSession
 from utils.helper import chunk_iterator
-from xemphimplus.config import Config
+from fimfast.config import Config
 import asyncio
 from pymongo import ReturnDocument
 
 
-class XemphimPlus:
+class FimFast:
 
     @classmethod
     async def populate(cls, debug=False):
@@ -16,8 +16,7 @@ class XemphimPlus:
         categories = await GeneralParser.get_categories_page(debug=debug)
         categorized_movies_urls, total_links =  await GeneralParser.get_categorized_movie_urls(categories, aux = aux, debug=debug)
         movies_urls = {url for movies_urls in categorized_movies_urls.values() for url in movies_urls}
-        print(f"Total links: {len(movies_urls)}")
-        print(aux)
+        print("Total: "+str(len(movies_urls)))
         async def _update_db_wrapper(metadata):
              # check if we have already added this movie 
             try:
@@ -29,11 +28,12 @@ class XemphimPlus:
                 # merge all instances of the same movie on different sites into one main instance
                 # create the main movie instance if not exists
                 matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
-                movie_object_id = matching_movie["_id"]
-                print(movie_object_id)
+                print(matching_movie)
             except Exception as e:
                 if debug:
+                    print("Error while _update_db_wrapper")
                     print(e)
+                raise e
     
         async def _routine_wrapper(url, session):
             movieMetadata = []
@@ -42,8 +42,10 @@ class XemphimPlus:
                 metadata = await MovieParser.get_movie_info(url, pre_metadata=aux.get(url), debug=debug, session=session)
             except Exception as e:
                 if debug:
+                    print("Error while get_movie_info")
                     print(e)
                 return
+
             print(metadata)
             await _update_db_wrapper(metadata)
 
@@ -51,7 +53,7 @@ class XemphimPlus:
         # process 20 urls at a time to avoid 500 http error
         for urls_range in chunk_iterator(movies_urls, 20):
             session = AsyncSession()
-            await asyncio.gather(*(_routine_wrapper(url, session) for url in urls_range), return_exceptions=True)
+            await asyncio.gather(*(_routine_wrapper(url, session) for url in urls_range))
             await session.close()
 
     @classmethod
@@ -73,7 +75,7 @@ class XemphimPlus:
 
 if __name__ == "__main__":
     eloop = asyncio.get_event_loop()
-    metadata = eloop.run_until_complete(XemphimPlus.populate(debug=True))
+    metadata = eloop.run_until_complete(FimFast.populate(debug=True))
     #eloop.run_until_complete(BiluTV.mergeMovies(debug=True))
 
 

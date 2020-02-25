@@ -1,4 +1,4 @@
-from xemphimplus.config import Config
+from fimfast.config import Config
 from utils.helper import normalize_url, inject_async_session
 from custom_request.request import AsyncSession, AsyncRequest
 from bs4 import BeautifulSoup
@@ -7,12 +7,13 @@ import time
 import asyncio
 import re
 import ast
+import urllib.parse
 
 def _get_num_pages(content: str, debug=False) -> int:
             n_pages = 1
             try:
                 html_parser = BeautifulSoup(content, "html.parser")
-                page_last = html_parser.find("ul", class_="page-numbers").findAll("li")[-2].get_text()
+                page_last = html_parser.find("ul", class_="pagination").findAll("li")[-2].get_text()
                 n_pages = int(page_last)
             except Exception as e:
                 if debug:
@@ -27,58 +28,58 @@ def _parse_urls_from_page(content: str, aux = None, debug=False) -> List[str]:
     links = []
     try:
         html_parser = BeautifulSoup(content, "html.parser")
-        for film_box in html_parser.findAll("div", class_="halim-item"):
-            link = film_box.find("a", class_="halim-thumb")["href"]
+        for film_box in html_parser.findAll("div", class_="tray-item"):
+            link = urllib.parse.urljoin(Config.BASE_URL, film_box.find("a")["href"])
             links.append(link)
-            # have to pass as an aux cause this stupid fucking site doesn't include this metadata in their
-            # movie page
-            if aux != None:
-                previous = aux[link] if link in aux else {}
-                try:
+            try:
+                if aux != None:
+                    previous = aux[link] if link in aux else {}
                     aux[link] = {
                         **previous,
-                        "title": film_box.find("a", class_="halim-thumb").find("p", class_="original_title").text.strip()
+                        "image": film_box.find("img")["data-src"]
                     }
-                except Exception as e:
-                    print(e)
-                    print(film_box.find("a", class_="halim-thumb"))
-
+            except Exception as e:
+                print(e)
         return links;
     except Exception as e:
         if debug:
             print("_parse_urls_from_page()", repr(e))
     return links
 
+FAKE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36"
+}
 
 class GeneralParser:
 
     @classmethod
     async def get_categories_page(cls, debug = False) -> List[str]:
         return [
-            "http://xemphimplus.net/am-nhac",
-            "http://xemphimplus.net/bi-an",
-            "http://xemphimplus.net/chien-tranh",
-            "http://xemphimplus.net/co-trang",
-            "http://xemphimplus.net/gia-dinh",
-            "http://xemphimplus.net/hai-huoc",
-            "http://xemphimplus.net/hanh-dong",
-            "http://xemphimplus.net/hinh-su",
-            "http://xemphimplus.net/hoat-hinh",
-            "http://xemphimplus.net/khoa-hoc",
-            "http://xemphimplus.net/kich-tinh",
-            "http://xemphimplus.net/kiem-hiep",
-            "http://xemphimplus.net/kinh-di",
-            "http://xemphimplus.net/lich-su",
-            "http://xemphimplus.net/phieu-luu",
-            "http://xemphimplus.net/tai-lieu",
-            "http://xemphimplus.net/tam-ly",
-            "http://xemphimplus.net/than-thoai",
-            "http://xemphimplus.net/the-thao",
-            "http://xemphimplus.net/tieu-su",
-            "http://xemphimplus.net/tinh-cam",
-            "http://xemphimplus.net/vien-tuong",
-            "http://xemphimplus.net/vo-thuat",
-            "http://xemphimplus.net/tv-show"
+            "https://fimfast.com/the-loai/hanh-dong",
+            "https://fimfast.com/the-loai/phieu-luu",
+            "https://fimfast.com/the-loai/kinh-di",
+            "https://fimfast.com/the-loai/tinh-cam",
+            "https://fimfast.com/the-loai/hoat-hinh",
+            "https://fimfast.com/the-loai/vo-thuat",
+            "https://fimfast.com/the-loai/hai-huoc",
+            "https://fimfast.com/the-loai/tam-ly",
+            "https://fimfast.com/the-loai/vien-tuong",
+            "https://fimfast.com/the-loai/than-thoai",
+            "https://fimfast.com/the-loai/chien-tranh",
+            "https://fimfast.com/the-loai/co-trang",
+            "https://fimfast.com/the-loai/am-nhac",
+            "https://fimfast.com/the-loai/hinh-su",
+            "https://fimfast.com/the-loai/tv-show",
+            "https://fimfast.com/the-loai/khoa-hoc",
+            "https://fimfast.com/the-loai/tai-lieu",
+            "https://fimfast.com/the-loai/other",
+            "https://fimfast.com/the-loai/lich-su",
+            "https://fimfast.com/the-loai/gia-dinh",
+            "https://fimfast.com/the-loai/the-thao",
+            "https://fimfast.com/the-loai/kiem-hiep",
+            "https://fimfast.com/the-loai/kich-tinh",
+            "https://fimfast.com/the-loai/bi-an",
+            "https://fimfast.com/the-loai/tieu-su"
         ]
 
     @classmethod
@@ -86,7 +87,7 @@ class GeneralParser:
     async def get_movie_urls(cls, category_url: str, aux = None, session=None, debug=False) -> List[str]:
         
         movie_urls = []
-        body, request_info = await AsyncRequest.get(category_url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
+        body, request_info = await AsyncRequest.get(category_url, headers = FAKE_HEADERS, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
         num_pages = _get_num_pages(body)
         pages_content = [body] # first page is already parsed
 
@@ -94,8 +95,7 @@ class GeneralParser:
         page_links = [Config.CATEGORY_PAGINATION_URL.format(\
                             category_url=normalize_url(category_url), page=page) 
                                 for page in range(2 ,num_pages+1)]
-        parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session) \
-                                                    for url in page_links), return_exceptions=True)
+        parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, headers= FAKE_HEADERS, use_proxy=Config.USE_PROXY, session=session) for url in page_links), return_exceptions=True)
 
         # filter out failed routines
         for page_url, routine in zip(page_links, parse_routines):

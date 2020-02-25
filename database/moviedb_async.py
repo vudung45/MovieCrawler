@@ -134,7 +134,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
 
         objectId = instance["_id"]
 
-        movie_title = instance["title"]
+        movie_title = instance["title"] if instance.get("title") else instance["title_vietnamese"]
         movie_title = movie_title.translate(str.maketrans('', '', string.punctuation))
 
         movie_vtitle = instance["title_vietnamese"]
@@ -143,19 +143,27 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
         words = re.findall(r"(?i)[a-z]+", movie_title)
         vwords = re.findall(r"(?i)[a-z]+", movie_vtitle)
 
-        matching_movie = await AsyncMovieCollection.find_one_and_update({ "$or": [ 
-                    {"title_vietnamese": {
-                      "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(vwords) + "[^a-zA-Z]*$"
-                    }}, 
-                    {"title": {
-                      "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(words) + "[^a-zA-Z]*$"
-                    }}
-                ]
-            }, {
-                "$addToSet": {
-                        "movieInstances": objectId
-                }
-            },
+        optional_predicate = {"year": instance["year"]} if instance.get("year") else {}
+        matching_movie = await AsyncMovieCollection.find_one_and_update(
+            {"$and" : 
+                [
+                    { 
+                        "$or": [ 
+                            {"title_vietnamese": {
+                              "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(vwords) + "[^a-zA-Z]*$"
+                            }}, 
+                            {"title": {
+                              "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(words) + "[^a-zA-Z]*$"
+                            }}
+                        ]
+                    }, 
+                    optional_predicate
+                ]}, 
+                {
+                    "$addToSet": {
+                            "movieInstances": objectId
+                    }
+                },
             upsert=True,
             return_document=ReturnDocument.AFTER,
         )
@@ -165,7 +173,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
             matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
                                                   {"$set" : movie_template}, return_document=ReturnDocument.AFTER)
 
-        missing_template = {k:v for k in movie_template if k not in matching_movie}
+        missing_template = { k: movie_template[v] for k in movie_template if k not in matching_movie}
 
         if len(missing_template):
             matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
