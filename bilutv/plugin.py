@@ -6,6 +6,7 @@ from utils.helper import chunk_iterator
 from bilutv.config import Config
 import asyncio
 from pymongo import ReturnDocument
+import argparse
 
 
 class BiluTV:
@@ -71,9 +72,15 @@ class BiluTV:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--merge', default=False, action='store_true')
+    parser.add_argument('--populate', action='store_true', default=True)
+    args = parser.parse_args()
     eloop = asyncio.get_event_loop()
-    metadata = eloop.run_until_complete(BiluTV.populate(debug=True))
-    #eloop.run_until_complete(BiluTV.mergeMovies(debug=True))
+    if(args.merge):
+        eloop.run_until_complete(BiluTV.mergeMovies(debug=True))
+    else:
+        eloop.run_until_complete(BiluTV.populate(debug=True))
 
 
 

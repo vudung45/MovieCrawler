@@ -141,8 +141,8 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
         movie_vtitle = instance["title_vietnamese"]
         movie_vtitle = movie_vtitle.translate(str.maketrans('', '', string.punctuation))
 
-        words = re.findall(r"(?i)[a-z]+", movie_title)
-        vwords = re.findall(r"(?i)[a-z]+", movie_vtitle)
+        words = re.findall(r"(?i)\w+", movie_title, re.UNICODE)
+        vwords = re.findall(r"(?i)\w+", movie_vtitle, re.UNICODE)
 
         optional_predicate = {"year": instance["year"]} if instance.get("year") else {}
         matching_movie = await AsyncMovieCollection.find_one_and_update(
@@ -150,7 +150,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
                 [
                     { 
                         "aliases": {
-                            "$regex": "|".join(["(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(w) +"[^a-zA-Z]*$" for w in [vwords, words]]),
+                            "$regex": "|".join(["(?i)^[\W]*" + "[\W]+".join(w) +"[\W]*$" for w in [vwords, words]]),
                             "$options": "i"
                         }
                     }, 
@@ -196,5 +196,14 @@ async def delete_origin(origin):
         }}) for movie in movies for instance in movie["movieInstances"])))
 
 
+async def normalize_year():
+    movies = await AsyncMovieInstanceCollection.find({}).to_list(length=None)
+
+    print(await asyncio.gather(*(
+        AsyncMovieInstanceCollection.find_one_and_update({"_id": movie["_id"]}, {"$set" : {
+            "year": re.match(r"(\d*)",  movie["year"])[1] if "year" in movie else None
+        }}) for movie in movies)))
+
+
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(assign_local_id())
+    asyncio.get_event_loop().run_until_complete(normalize_year())

@@ -66,6 +66,7 @@ class MovieParser:
                 if field in SWITCHER:
                     metadata[SWITCHER[field]] = content.strip() # clean leading white spaces
 
+            metadata["year"] = re.match(r"(\d*)", metadata["year"])[1]
             metadata["movie_id"] = re.match(r".*-(\d*).html$", url)[1].strip()
             metadata["origin"] = Config.IDENTIFIER
             return metadata

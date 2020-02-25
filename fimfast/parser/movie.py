@@ -90,7 +90,7 @@ class MovieParser:
                 except Exception as e:
                     print("Error parsing field: "+div.text)
                     print(e)
-
+            metadata["year"] = re.match(r"(\d*)", metadata["year"])[1]
             metadata["genres"] = metadata["genres"].replace("\xa0\n"," ") if "genres" in metadata else ""
             metadata["movie_id"] = html_parse.find("div", class_="container")["data-id"].strip()
             metadata["origin"] = Config.IDENTIFIER

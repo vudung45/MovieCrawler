@@ -7,6 +7,7 @@ from utils.helper import chunk_iterator
 import asyncio
 from motphim.config import Config
 from pymongo import ReturnDocument
+import argparse
 
 
 class Motphim:
@@ -71,9 +72,15 @@ class Motphim:
         await asyncio.gather(*(_routine(instance) for instance in instances))
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--merge', default=False, action='store_true')
+    parser.add_argument('--populate', action='store_true', default=True)
+    args = parser.parse_args()
     eloop = asyncio.get_event_loop()
-    metadata = eloop.run_until_complete(Motphim.populate(debug=True))
-    #eloop.run_until_complete(Motphim.mergeMovies(debug=True))
+    if(args.merge):
+        eloop.run_until_complete(Motphim.mergeMovies(debug=True))
+    else:
+        eloop.run_until_complete(Motphim.populate(debug=True))
 
 
 
