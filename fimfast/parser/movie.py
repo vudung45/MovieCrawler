@@ -89,7 +89,6 @@ class MovieParser:
                     print(e)
 
             metadata["genres"] = metadata["genres"].replace("\xa0\n"," ") if "genres" in metadata else ""
-
             metadata["movie_id"] = html_parse.find("div", class_="container")["data-id"].strip()
             metadata["origin"] = Config.IDENTIFIER
             return metadata

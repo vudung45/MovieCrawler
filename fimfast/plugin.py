@@ -33,7 +33,6 @@ class FimFast:
                 if debug:
                     print("Error while _update_db_wrapper")
                     print(e)
-                raise e
     
         async def _routine_wrapper(url, session):
             movieMetadata = []
