@@ -29,8 +29,7 @@ class Motphim:
                 # merge all instances of the same movie on different sites into one main instance
                 # create the main movie instance if not exists
                 matching_movie = await AsyncMovieInstanceCollection.mergeWithCorrespondingMovie(instance=instance)
-                movie_object_id = matching_movie["_id"]
-                print(movie_object_id)
+                print(matching_movie)
             except Exeption as e:
                 if debug:
                     print(e)

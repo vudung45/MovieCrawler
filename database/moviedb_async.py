@@ -150,7 +150,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
                 [
                     { 
                         "aliases": {
-                            "$regex": "(?i)" + "[^a-zA-Z]+".join(vwords)+"|"+"(?i)" + "[^a-zA-Z]+".join(words),
+                            "$regex": "|".join(["(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(w) +"[^a-zA-Z]*$" for w in [vwords, words]]),
                             "$options": "i"
                         }
                     }, 

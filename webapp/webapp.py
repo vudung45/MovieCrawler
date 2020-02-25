@@ -35,7 +35,7 @@ async def search(request):
     if data.get("title"): #search by title
         try:
             limit = data["limit"] if data.get("limit") else 20
-            words = re.findAll(r"\w+", data['title']);
+            words = re.findall(r"\w+", data['title']);
             movies = await AsyncMovieCollection.find(
                                 {
                                     "$or":  [
