@@ -49,7 +49,7 @@ class MovieParser:
                                         delay=Config.REQUEST_DELAY, session=session)
             jsonResp = json.loads(resp)
 
-            urls = [ { str(item["name"]) : urllib.parse.urljoin(Config.BASE_URL, item["link"]) for item in jsonResp["data"]}]
+            urls = [ { str(item["name"]) : urllib.parse.urljoin(Config.BASE_URL, item["link"])} for item in jsonResp["data"]]
             return urls
         except Exception as e:
             if debug:

@@ -13,9 +13,9 @@ class FimFast:
     @classmethod
     async def populate(cls, debug=False):
         aux = {}
-        categories = await GeneralParser.get_categories_page(debug=debug)
-        categorized_movies_urls, total_links =  await GeneralParser.get_categorized_movie_urls(categories, aux = aux, debug=debug)
-        movies_urls = {url for movies_urls in categorized_movies_urls.values() for url in movies_urls}
+        # categories = await GeneralParser.get_categories_page(debug=debug)
+        # categorized_movies_urls, total_links =  await GeneralParser.get_categorized_movie_urls(categories, aux = aux, debug=debug)
+        movies_urls = {"https://fimfast.com/tang-lop-itaewon"}
         print("Total: "+str(len(movies_urls)))
         async def _update_db_wrapper(metadata):
              # check if we have already added this movie 
