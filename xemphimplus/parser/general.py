@@ -41,7 +41,6 @@ def _parse_urls_from_page(content: str, aux = None, debug=False) -> List[str]:
                     }
                 except Exception as e:
                     print(e)
-                    print(film_box.find("a", class_="halim-thumb"))
 
         return links;
     except Exception as e:
@@ -84,15 +83,14 @@ class GeneralParser:
     @classmethod
     @inject_async_session
     async def get_movie_urls(cls, category_url: str, aux = None, session=None, debug=False) -> List[str]:
-        
         movie_urls = []
         body, request_info = await AsyncRequest.get(category_url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
-        num_pages = _get_num_pages(body)
-        pages_content = [body] # first page is already parsed
 
+        num_pages = _get_num_pages(body, debug=debug)
+        pages_content = [body] # first page is already parsed
         # all page links except the first page
         page_links = [Config.CATEGORY_PAGINATION_URL.format(\
-                            category_url=normalize_url(category_url), page=page) 
+                            category_url=category_url, page=page) 
                                 for page in range(2 ,num_pages+1)]
         parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session) \
                                                     for url in page_links), return_exceptions=True)
@@ -130,6 +128,7 @@ class GeneralParser:
     
             for routine, category in zip(parse_routines, category_urls):
                 if isinstance(routine, Exception):
+                    raise routine
                     if debug:
                         print(f"Failed to grab movie links for category {category}. Error: \n {repr(routine)}")
                     continue

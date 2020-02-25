@@ -13,7 +13,7 @@ import asyncio
 from collections import ChainMap
 import time
 import os
-
+import re;
 
 routes = web.RouteTableDef()
 
@@ -35,12 +35,13 @@ async def search(request):
     if data.get("title"): #search by title
         try:
             limit = data["limit"] if data.get("limit") else 20
+            words = re.match(r"\w+", data['title']);
             movies = await AsyncMovieCollection.find(
                                 {
                                     "$or":  [
-                                                {"title_vietnamese": {"$regex": f"(?i).*{data['title']}"}}, 
-                                                {"title_vietnamese_noaccent": {"$regex": f"(?i).*{data['title']}"}}, 
-                                                {"title": {"$regex": f"(?i).*{data['title']}"}}
+                                                {"title_vietnamese": {"$regex": f"(?i).*{".+".join(words)}"}}, 
+                                                {"title_vietnamese_noaccent": {"$regex": f"(?i).*{".+".join(words)}"}}, 
+                                                {"title": {"$regex": f"(?i).*{".+".join(words)}"}}
                                             ]
                                 }).to_list(length=limit)
 

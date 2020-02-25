@@ -40,6 +40,7 @@ def _parse_urls_from_page(content: str, aux = None, debug=False) -> List[str]:
                     }
             except Exception as e:
                 print(e)
+        print(links)
         return links;
     except Exception as e:
         if debug:
@@ -93,7 +94,7 @@ class GeneralParser:
 
         # all page links except the first page
         page_links = [Config.CATEGORY_PAGINATION_URL.format(\
-                            category_url=normalize_url(category_url), page=page) 
+                            category_url=category_url, page=page) 
                                 for page in range(2 ,num_pages+1)]
         parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, headers= FAKE_HEADERS, use_proxy=Config.USE_PROXY, session=session) for url in page_links), return_exceptions=True)
 

@@ -29,6 +29,7 @@ class AsyncMovieCollection(motor.motor_asyncio.AsyncIOMotorCollection):
         "title": None,
         "title_vietnamese": None,
         "title_vietnamese_noaccent": None,
+        "aliases": [],
         "movieInstances": [],
         "image": None,
         "year": None
@@ -56,7 +57,7 @@ class AsyncMovieCollection(motor.motor_asyncio.AsyncIOMotorCollection):
                 }
         }
         
-        return await self.find_one_and_update({"_id" : objectId}, update_query)
+        return await self.find_one_and_update({"_id" : objectId}, update_query, return_document=ReturnDocument.AFTER)
 
     def generateTemplate(self, metadata):
         insertData =  {}
@@ -148,39 +149,29 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
             {"$and" : 
                 [
                     { 
-                        "$or": [ 
-                            {"title_vietnamese": {
-                              "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(vwords) + "[^a-zA-Z]*$"
-                            }}, 
-                            {"title": {
-                              "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(words) + "[^a-zA-Z]*$"
-                            }}
-                        ]
+                        "aliases": {
+                            "$regex": "(?i)" + "[^a-zA-Z]+".join(vwords)+"|"+"(?i)" + "[^a-zA-Z]+".join(words),
+                            "$options": "i"
+                        }
                     }, 
                     optional_predicate
-                ]}, 
-                {
-                    "$addToSet": {
-                            "movieInstances": objectId
-                    }
-                },
+                ]
+            }, {
+                "$addToSet" : {
+                                    "aliases" :  { "$each" : [movie_title, movie_vtitle] },
+                                    "movieInstances": instance["_id"]
+                            }
+        
+            },
             upsert=True,
-            return_document=ReturnDocument.AFTER,
+            return_document=ReturnDocument.AFTER
         )
         movie_template = AsyncMovieCollection.generateTemplate(instance)
-
-        if("title" not in matching_movie): # new movie
-            matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
-                                                  {"$set" : movie_template}, return_document=ReturnDocument.AFTER)
-
-        missing_template = { k: movie_template[v] for k in movie_template if k not in matching_movie}
+        missing_template = { k: movie_template[k] for k in movie_template if k not in matching_movie}
 
         if len(missing_template):
             matching_movie = await AsyncMovieCollection.find_one_and_update({"_id" : matching_movie["_id"]}, 
                                                   {"$set" : missing_template}, return_document=ReturnDocument.AFTER)
-
-
-        await AsyncMovieInstanceCollection.update_one({"_id": objectId}, {"$set": {"local_movie_id": matching_movie["_id"]}})
 
         return matching_movie
 

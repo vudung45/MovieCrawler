@@ -74,6 +74,7 @@ class MovieParser:
             metadata["origin"] = Config.IDENTIFIER
             return metadata
         except Exception as e:
+            raise e
             if debug:
                 print(f"get_movie_info(). Error: \n {repr(e)}")
         return None

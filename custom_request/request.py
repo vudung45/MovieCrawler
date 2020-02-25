@@ -1,9 +1,10 @@
 import aiohttp
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode, quote
 import time
 import asyncio
 from  aiohttp.client_exceptions import ClientResponseError
 from utils.retryable import retryable_async
+
 
 class AsyncSession(aiohttp.ClientSession):
 
@@ -26,7 +27,7 @@ class AsyncSession(aiohttp.ClientSession):
         domain = urlparse(url).netloc
         await self.delay_access(domain, delay)
         if use_proxy:
-            url = f"https://feedback.googleusercontent.com/gadgets/proxy?container=focus&url={url}"
+            url = f"https://feedback.googleusercontent.com/gadgets/proxy?container=focus&url={quote(url)}"
 
         r =  await super().get(url, *args, **kwargs)
         return r
