@@ -28,7 +28,7 @@ class MovieParser:
         URL has to be a watch button url
         '''
         if not content:
-            content, _ = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
+            content, _ = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:
@@ -47,7 +47,7 @@ class MovieParser:
 
         try:
             if not content:
-                content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
+                content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
             html_parse = BeautifulSoup(content, "html.parser")
             metadata = {
                 "title": html_parse.find("h2", class_="real-name").text.strip(),
@@ -63,7 +63,7 @@ class MovieParser:
                 if field in SWITCHER:
                     metadata[SWITCHER[field]] = info[1].strip() # clean leading white spaces
 
-            metadata["movie_id"] = re.match(r".*-(\d*)\.html$", url)[1].strip()
+            metadata["movie_id"] = re.match(r".*-(\d*)\.html", url)[1]
             metadata["origin"] = Config.IDENTIFIER
             return metadata
         except Exception as e:
@@ -76,7 +76,7 @@ class MovieParser:
     @inject_async_session
     async def get_watch_button_url(self, url: str, content=None, session = None, debug=False) -> Optional[str]:
         if not content:
-            content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session)
+            content, request_info = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
 
         try:
             html_parse = BeautifulSoup(content, "html.parser")
@@ -93,7 +93,3 @@ if __name__ == "__main__":
     #print(metadata)
     episodes_urls = eloop.run_until_complete(MovieParser.get_episodes_urls("https://bilutv.org/phim-moi-tinh-dau-cua-thieu-nu-tung-trai-tap-1-i1-16211.192629.html", debug=True))
     print(episodes_urls)
-
-
-
-        

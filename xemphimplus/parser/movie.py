@@ -66,7 +66,10 @@ class MovieParser:
             metadata["vietnamese_description"] = html_parse.find("article", class_="item-content").text.strip()
             metadata["genres"] = html_parse.find("div", class_="more-info").findAll("span")[-1].text.strip()
             metadata["duration"] = html_parse.find("div", class_="more-info").findAll("span")[-1].text.strip()
-            print(url)
+            try:
+                metadata["year"] = html_parse.find("span", class_="title-year").text.strip().replace("(", "").replace(")", "");
+            except Exception as e:
+                print(e)
             metadata["movie_id"] = url.split("/")[-1].strip()
             metadata["origin"] = Config.IDENTIFIER
             return metadata

@@ -73,7 +73,7 @@ class GeneralParser:
     async def get_movie_urls(cls, category_url: str, session=None, debug=False) -> List[str]:
         
         movie_urls = []
-        body, request_info = await AsyncRequest.get(category_url, delay=Config.REQUEST_DELAY, session=session)
+        body, request_info = await AsyncRequest.get(category_url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
         num_pages = _get_num_pages(body)
         pages_content = [body] # first page is already parsed
 
@@ -81,7 +81,7 @@ class GeneralParser:
         page_links = [Config.CATEGORY_PAGINATION_URL.format(\
                             category_url=normalize_url(category_url), page=page) 
                                 for page in range(2 ,num_pages+1)]
-        parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, session=session) \
+        parse_routines = await asyncio.gather(*(AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session) \
                                                     for url in page_links), return_exceptions=True)
 
         # filter out failed routines

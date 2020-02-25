@@ -112,9 +112,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
         words = re.findall(r"\w+", movie_title)
         vwords = re.findall(r"\w+", movie_vtitle)
 
-        matching_movie = await AsyncMovieCollection.find_one({
-            "$and": [   
-                        { 
+        matching_movie = await AsyncMovieCollection.find_one({ 
                             "$or": [ 
                                         {"title_vietnamese": {
                                           "$regex" : "(?i)^\W*" + "\W+".join(vwords) + "\W*$"
@@ -123,12 +121,7 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
                                           "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
                                         }}
                                     ]
-                        },
-                        {
-                            "year": instance["year"]
-                        }
-                    ]
-            })
+                        })
 
         return matching_movie
 
@@ -147,15 +140,15 @@ class AsyncMovieInstanceCollection(motor.motor_asyncio.AsyncIOMotorCollection): 
         movie_vtitle = instance["title_vietnamese"]
         movie_vtitle = movie_vtitle.translate(str.maketrans('', '', string.punctuation))
 
-        words = re.findall(r"\w+", movie_title)
-        vwords = re.findall(r"\w+", movie_vtitle)
+        words = re.findall(r"(?i)[a-z]+", movie_title)
+        vwords = re.findall(r"(?i)[a-z]+", movie_vtitle)
 
         matching_movie = await AsyncMovieCollection.find_one_and_update({ "$or": [ 
                     {"title_vietnamese": {
-                      "$regex" : "(?i)^\W*" + "\W+".join(vwords) + "\W*$"
+                      "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(vwords) + "[^a-zA-Z]*$"
                     }}, 
                     {"title": {
-                      "$regex" : "(?i)^\W*" + "\W+".join(words) + "\W*$"
+                      "$regex" : "(?i)^[^a-zA-Z]*" + "[^a-zA-Z]+".join(words) + "[^a-zA-Z]*$"
                     }}
                 ]
             }, {
@@ -188,6 +181,14 @@ AsyncMovieInstanceCollection = AsyncMovieInstanceCollection()
 
 
 async def assign_local_id():
+    movies = await AsyncMovieCollection.find({}).to_list(length=None)
+
+    print(await asyncio.gather(*(
+        AsyncMovieInstanceCollection.find_one_and_update({"_id": instance}, {"$set" : {
+            "local_movie_id": movie["_id"]
+        }}) for movie in movies for instance in movie["movieInstances"])))
+
+async def delete_origin(origin):
     movies = await AsyncMovieCollection.find({}).to_list(length=None)
 
     print(await asyncio.gather(*(

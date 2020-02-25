@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 from typing import List, Iterable, Tuple, Dict
 import time
 import asyncio
+import re
+import ast
 
 def _get_num_pages(content: str, debug=False) -> int:
             n_pages = 1
@@ -32,10 +34,13 @@ def _parse_urls_from_page(content: str, aux = None, debug=False) -> List[str]:
             # movie page
             if aux != None:
                 previous = aux[link] if link in aux else {}
-                aux[link] = {
-                    **previous,
-                    "title": film_box.find("a", class_="halim-thumb").find("p", class_="original_title").text.strip()
-                }
+                try:
+                    aux[link] = {
+                        **previous,
+                        "title": film_box.find("a", class_="halim-thumb").find("p", class_="original_title").text.strip()
+                    }
+                except Exception as e:
+                    print(e)
 
         return links;
     except Exception as e:
