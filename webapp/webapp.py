@@ -96,12 +96,18 @@ async def search(request):
                 if not movie.get("movieInstances"):
                     return web.json_response({"status": 1, "response": {}})
 
-                instances_episodes = await asyncio.gather(*(get_episodes(instance_id, forceUpdate=data.get("force", False)) \
+                coroutines = await asyncio.gather(*(get_episodes(instance_id, forceUpdate=data.get("force", False)) \
                                                             for instance_id in movie["movieInstances"]), return_exceptions=True)
 
+                response = {}
+                for routine in coroutines:
+                    if isinstance(routine, Exception):
+                        print(routine)
+                        continue
+                    response = {**response, **routine}
+
                 return web.json_response({"status": 1,  
-                                         "response": dict(ChainMap(*(episodes for episodes 
-                                                                     in instances_episodes if not isinstance(episodes,Exception))))})   
+                                         "response": response})   
             
         elif data.get("instanceId"):
             return web.json_response({"status": 1,  "response": await get_episodes(data["instanceId"], forceUpdate=data.get("force", False))}) 
@@ -126,7 +132,7 @@ async def get_episodes(instance_id, forceUpdate=False):
         return { str(movie_instance["_id"]) : { "origin" : movie_instance["origin"], "episodes": movie_instance["episodes"]}}
     
     watch_url = movie_instance["watch_url"]
-    episodes = await MOVIE_PARSERS[movie_instance["origin"]].get_episodes_urls(watch_url)
+    episodes = await MOVIE_PARSERS[movie_instance["origin"]].get_episodes_urls(watch_url, retry=False)
     print(episodes)
     if len(episodes) > 0:
         print(await AsyncMovieInstanceCollection.find_one_and_update({"_id": ObjectId(instance_id)}, 

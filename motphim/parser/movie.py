@@ -22,14 +22,14 @@ class MovieParser:
 
     @classmethod
     @inject_async_session
-    async def get_episodes_urls(self, url: str, content=None, session = None, debug=False) -> List[str]:
+    async def get_episodes_urls(self, url: str, content=None, session = None, retry=True, debug=False) -> List[str]:
         '''
         url: https://motphim.net/xem-phim/luong-the-hoan-tap-1-6494_81580.html
 
         URL has to be a watch button url
         '''
         if not content:
-            content, _ = await AsyncRequest.get(url, use_proxy=Config.USE_PROXY, delay=Config.REQUEST_DELAY, session=session)
+            content, _ = await AsyncRequest.get(url, use_proxy=Config.USE_PROXY, retry=retry, delay=Config.REQUEST_DELAY, session=session)
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:

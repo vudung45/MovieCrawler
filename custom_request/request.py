@@ -47,7 +47,7 @@ class AsyncRequest:
 
     @classmethod
     @retryable_async(exceptions=[ClientResponseError, ClientConnectorError])
-    async def get(cls, url, *args, delay=0.01, session=None, **kwargs):
+    async def get(cls, url, *args, delay=0.01, session=None, retry=True, **kwargs):
         if not session:
             async with cls.new_session() as session:
                 r = await session.get(url, *args, delay=delay, **kwargs)

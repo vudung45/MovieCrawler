@@ -21,14 +21,14 @@ class MovieParser:
 
     @classmethod
     @inject_async_session
-    async def get_episodes_urls(self, url: str, content=None, session = None, debug=False) -> List[str]:
+    async def get_episodes_urls(self, url: str, content=None, retry=True, session = None, debug=False) -> List[str]:
         '''
         url: http://khoaitv.org/phim/shameless-season-10-mat-day-phan-10-13270
 
         URL has to be a watch button url
         '''
         if not content:
-            content, _ = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, use_proxy=Config.USE_PROXY, session=session)
+            content, _ = await AsyncRequest.get(url, delay=Config.REQUEST_DELAY, retry=retry, use_proxy=Config.USE_PROXY, session=session)
 
         html_parse = BeautifulSoup(content, "html.parser")
         try:
