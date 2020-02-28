@@ -133,7 +133,6 @@ async def get_episodes(instance_id, forceUpdate=False):
     
     watch_url = movie_instance["watch_url"]
     episodes = await MOVIE_PARSERS[movie_instance["origin"]].get_episodes_urls(watch_url, retry=False)
-    print(episodes)
     if len(episodes) > 0:
         print(await AsyncMovieInstanceCollection.find_one_and_update({"_id": ObjectId(instance_id)}, 
                                                                     {
