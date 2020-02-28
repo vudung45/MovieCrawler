@@ -13,7 +13,7 @@ def retryable_async(exceptions=[], delay=0.1, multipler=2, retries=5):
         @functools.wraps(func)
         async def wrapped(*args, **kwargs):
             exceptions, delay, multipler, retries = settings["exceptions"], settings["delay"], settings["multipler"], settings["retries"]
-            if "retry" in kwargs and kwargs["retry"]:
+            if "retry" in kwargs and not kwargs["retry"]:
                 retries = 0
                 
             while retries > 0:
